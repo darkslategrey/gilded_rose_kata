@@ -1,8 +1,11 @@
 require 'rspec/given'
 require 'gilded_rose'
 
-describe "#update_quality" do
+RSpec.configure do |config|
+  config.expect_with(:rspec) { |c| c.syntax = :should }
+end
 
+describe "#update_quality" do
   context "with a single" do
     Given(:initial_sell_in) { 5 }
     Given(:initial_quality) { 10 }
