@@ -1,4 +1,3 @@
-
 task :default => :spec
 
 task :spec do

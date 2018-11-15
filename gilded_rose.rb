@@ -1,47 +1,42 @@
+$LOAD_PATH.unshift(File.dirname(__FILE__), 'lib')
+
+require 'rules'
+
 def update_quality(items)
   items.each do |item|
-    if item.name != 'Aged Brie' && item.name != 'Backstage passes to a TAFKAL80ETC concert'
-      if item.quality > 0
-        if item.name != 'Sulfuras, Hand of Ragnaros'
-          item.quality -= 1
-        end
-      end
-    else
-      if item.quality < 50
-        item.quality += 1
-        if item.name == 'Backstage passes to a TAFKAL80ETC concert'
-          if item.sell_in < 11
-            if item.quality < 50
-              item.quality += 1
-            end
-          end
-          if item.sell_in < 6
-            if item.quality < 50
-              item.quality += 1
-            end
-          end
-        end
-      end
+
+    ## quality stuff
+
+    if(BackStagePassesSellInDaysLeftRangeIs.new(5, 10).is_satisfied_by?(item) \
+       or AgedBrieExpiredDays.new.is_satisfied_by?(item))
+      item.quality += 2
+    elsif BackStagePassesSellInDaysLeftRangeIs.new(0, 5).is_satisfied_by?(item)
+      item.quality += 3
+    elsif BackStagePassesExpiredDays.new.is_satisfied_by?(item)
+      item.quality = 0
+    elsif(BackStagePasses.new.is_satisfied_by?(item) \
+          or AgedBrieNotExpiredDays.new.is_satisfied_by?(item))
+      item.quality += 1
+    elsif ConjuredExpiredDays.new.is_satisfied_by?(item)
+      item.quality -= Rule::QUALITY_DECREMENT_PASSED * 2
+    elsif(ConjuredNotExpiredDays.new.is_satisfied_by?(item) \
+          or NotSulfuraExpiredDays.new.is_satisfied_by?(item))
+      item.quality -= Rule::QUALITY_DECREMENT * 2
+    elsif NotSulfuraNotExpiredDays.new.is_satisfied_by?(item)
+      item.quality -= Rule::QUALITY_DECREMENT
     end
-    if item.name != 'Sulfuras, Hand of Ragnaros'
+    if QualityUnderMin.new.is_satisfied_by?(item)
+      item.quality = Rule::MIN_QUALITY
+    end
+    if(QualityOverMax.new.is_satisfied_by?(item) \
+       and not Sulfura.new.is_satisfied_by?(item))
+      item.quality = Rule::MAX_QUALITY
+    end
+
+    ## sell_in stuff
+
+    if(not Sulfura.new.is_satisfied_by?(item))
       item.sell_in -= 1
-    end
-    if item.sell_in < 0
-      if item.name != "Aged Brie"
-        if item.name != 'Backstage passes to a TAFKAL80ETC concert'
-          if item.quality > 0
-            if item.name != 'Sulfuras, Hand of Ragnaros'
-              item.quality -= 1
-            end
-          end
-        else
-          item.quality = item.quality - item.quality
-        end
-      else
-        if item.quality < 50
-          item.quality += 1
-        end
-      end
     end
   end
 end
@@ -60,4 +55,3 @@ Item = Struct.new(:name, :sell_in, :quality)
 #   Item.new("Backstage passes to a TAFKAL80ETC concert", 15, 20),
 #   Item.new("Conjured Mana Cake", 3, 6),
 # ]
-
